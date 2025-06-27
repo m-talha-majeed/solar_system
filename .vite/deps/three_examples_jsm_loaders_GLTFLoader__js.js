@@ -65,7 +65,7 @@ import {
   Vector2,
   Vector3,
   VectorKeyframeTrack
-} from "./chunk-6LTRFBSJ.js";
+} from "./chunk-2JXY2HBO.js";
 
 // node_modules/three/examples/jsm/utils/BufferGeometryUtils.js
 function toTrianglesDrawMode(geometry, drawMode) {

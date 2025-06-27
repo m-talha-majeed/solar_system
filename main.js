@@ -15,25 +15,17 @@ scene.background =new THREE.Color(0x000000);
 renderer.setSize(w, h);
 document.body.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 3);
-scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(1, 1, 1);
-scene.add(directionalLight);
+AmbientLight(0xffffff, 3,scene);
+DirectionalLight(0xffffff, 5,scene);
+settingPlanets();
+
 
 camera.position.z = 1000;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-let earth = getEarth();
-let mercury = getMercury();
-let venus = getVenus();
-let mars = getMars();
-let jupiter = getJupiter();
-let saturn = getSaturn();
-let uranus = getUranus();
-let neptune = getNeptune();
-let sun = getSun();
+controls.dampingFactor = 0.25;
+
 const planets = [
   { name: 'Mercury', radius: 200, speed: 0.004 },
   { name: 'Venus',   radius: 270, speed: 0.003 },
@@ -45,6 +37,9 @@ const planets = [
   { name: 'Neptune', radius: 1150, speed: 0.0005 }
 ];
 planets.forEach(p => p.angle = Math.random() * Math.PI * 2);
+
+// Animation loop to update the positions of the planets
+// This function is called repeatedly to animate the planets in their orbits.
 function animate() {
   requestAnimationFrame(animate);
   
@@ -62,10 +57,58 @@ function animate() {
   controls.update();
   renderer.render(scene, camera);
 }
-
 animate();
 
 
+// Functions to create lights in the scene
+// These lights are added to the scene to illuminate the planets and enhance the 3D effect.
+function AmbientLight(color, intensity,scene) {
+  const light = new THREE.AmbientLight(color, intensity); 
+  scene.add(light);
+}
+function DirectionalLight(color, intensity,scene) {
+  const light = new THREE.DirectionalLight(color, intensity);
+  scene.add(light);
+  light.position.set(1, 1, 1).normalize();
+  light.castShadow = false;
+}
+
+
+// Handle mouse click events to select planets
+// This code allows you to click on planets and log their names to the console.
+const raycaster = new THREE.Raycaster();
+document.addEventListener('mousedown', onMouseDown);
+
+function onMouseDown(event) {
+  const coords = new THREE.Vector2(
+    (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+    -((event.clientY / renderer.domElement.clientHeight) * 2 - 1),
+  );
+  raycaster.setFromCamera(coords, camera);
+  const intersections = raycaster.intersectObjects(scene.children, true);
+  if (intersections.length > 0) {
+    const selectedObject = intersections[0].object;
+    
+    console.log(`${selectedObject.name} was clicked!`);
+  }
+}
+
+// Functions to load the Planet models
+// Each function loads a specific planet model and adds it to the scene.
+// The models are loaded using the GLTFLoader, and each planet is scaled and positioned accordingly
+
+function settingPlanets() {
+    getEarth();
+    getMercury();
+    getVenus();
+    getMars();
+    getJupiter();
+    getSaturn();
+    getUranus();
+    getNeptune();
+    getSun();
+
+}
 function getEarth(){
   let earth = null;
 
@@ -73,9 +116,6 @@ function getEarth(){
   gltfloader.load('/planet-models/Earth.glb',
     function (gltf) {
       earth = gltf.scene;
-      // let box = new THREE.Box3().setFromObject(earth);
-      // let size = box.getSize(new THREE.Vector3());
-      // console.log(size);
     
       earth.traverse(function (child) {
         if (child.isMesh) {
@@ -279,6 +319,7 @@ function getSun() {
       sun.name = 'Sun';
       scene.add(sun);
       sun.position.set(0, 0, 0);
+      
 
     },
     undefined,
@@ -287,20 +328,4 @@ function getSun() {
     }
   );
   return sun;
-}
-const raycaster = new THREE.Raycaster();
-document.addEventListener('mousedown', onMouseDown);
-
-function onMouseDown(event) {
-  const coords = new THREE.Vector2(
-    (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
-    -((event.clientY / renderer.domElement.clientHeight) * 2 - 1),
-  );
-  raycaster.setFromCamera(coords, camera);
-  const intersections = raycaster.intersectObjects(scene.children, true);
-  if (intersections.length > 0) {
-    const selectedObject = intersections[0].object;
-    
-    console.log(`${selectedObject.name} was clicked!`);
-  }
 }
