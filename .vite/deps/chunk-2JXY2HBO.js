@@ -41473,4 +41473,4 @@ three/build/three.module.js:
    * SPDX-License-Identifier: MIT
    *)
 */
-//# sourceMappingURL=chunk-6LTRFBSJ.js.map
+//# sourceMappingURL=chunk-2JXY2HBO.js.map
