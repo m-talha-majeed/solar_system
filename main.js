@@ -1,20 +1,21 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
+
+
 
 const w = window.innerWidth;
 const h = window.innerHeight;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, w/h);
+
 const renderer = new THREE.WebGLRenderer();
-const textureLoader = new THREE.TextureLoader();
-const backgroundTexture = textureLoader.load('./planet-models/background.jpeg');
-
-scene.background =new THREE.Color(0x000000);
-
+renderer.toneMappingExposure = 0.5;
 renderer.setSize(w, h);
 document.body.appendChild(renderer.domElement);
 
+setBackground('./planet-models/klop.exr');
 AmbientLight(0xffffff, 3,scene);
 DirectionalLight(0xffffff, 5,scene);
 settingPlanets();
@@ -329,3 +330,13 @@ function getSun() {
   );
   return sun;
 }
+
+// Function to set the background texture of the scene
+function setBackground(path) {
+  const exrLoader = new EXRLoader();
+  exrLoader.load(path, function(texture) {
+    scene.background = texture;
+  });
+}
+
+
