@@ -2,25 +2,25 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
-
-
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 
 const w = window.innerWidth;
 const h = window.innerHeight;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, w/h);
-
 const renderer = new THREE.WebGLRenderer();
-renderer.toneMappingExposure = 0.5;
+const { finalComposer, bloomComposer, bloomBlendPass } = setupBloomComposers(renderer, scene, camera, w, h);
+
 renderer.setSize(w, h);
 document.body.appendChild(renderer.domElement);
 
-setBackground('./planet-models/klop.exr');
-AmbientLight(0xffffff, 3,scene);
-DirectionalLight(0xffffff, 5,scene);
+AmbientLight(0xffffff, 3, scene);
 settingPlanets();
 
-
+setBackground('./planet-models/klop.exr');
 camera.position.z = 1000;
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -39,11 +39,9 @@ const planets = [
 ];
 planets.forEach(p => p.angle = Math.random() * Math.PI * 2);
 
-// Animation loop to update the positions of the planets
-// This function is called repeatedly to animate the planets in their orbits.
 function animate() {
   requestAnimationFrame(animate);
-  
+
   planets.forEach(planet => {
     const obj = scene.getObjectByName(planet.name);
     if (obj) {
@@ -54,29 +52,33 @@ function animate() {
       obj.rotation.y += 0.01;
     }
   });
-  
+
   controls.update();
-  renderer.render(scene, camera);
+
+  const originalBackground = scene.background;
+  scene.background = null; 
+  bloomComposer.render();
+  scene.background = originalBackground; 
+
+  bloomBlendPass.uniforms.bloomTexture.value = bloomComposer.renderTarget2.texture;
+  finalComposer.render();
 }
 animate();
 
-
 // Functions to create lights in the scene
-// These lights are added to the scene to illuminate the planets and enhance the 3D effect.
-function AmbientLight(color, intensity,scene) {
+function AmbientLight(color, intensity, scene) {
   const light = new THREE.AmbientLight(color, intensity); 
   scene.add(light);
 }
-function DirectionalLight(color, intensity,scene) {
+
+function DirectionalLight(color, intensity, scene) {
   const light = new THREE.DirectionalLight(color, intensity);
   scene.add(light);
   light.position.set(1, 1, 1).normalize();
   light.castShadow = false;
 }
 
-
 // Handle mouse click events to select planets
-// This code allows you to click on planets and log their names to the console.
 const raycaster = new THREE.Raycaster();
 document.addEventListener('mousedown', onMouseDown);
 
@@ -89,15 +91,11 @@ function onMouseDown(event) {
   const intersections = raycaster.intersectObjects(scene.children, true);
   if (intersections.length > 0) {
     const selectedObject = intersections[0].object;
-    
     console.log(`${selectedObject.name} was clicked!`);
   }
 }
 
 // Functions to load the Planet models
-// Each function loads a specific planet model and adds it to the scene.
-// The models are loaded using the GLTFLoader, and each planet is scaled and positioned accordingly
-
 function settingPlanets() {
     getEarth();
     getMercury();
@@ -108,26 +106,27 @@ function settingPlanets() {
     getUranus();
     getNeptune();
     getSun();
-
 }
+
 function getEarth(){
   let earth = null;
-
   const gltfloader = new GLTFLoader();
   gltfloader.load('/planet-models/Earth.glb',
     function (gltf) {
       earth = gltf.scene;
-    
       earth.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Earth';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0x3399ff);
+            child.material.emissiveIntensity = 0.5; 
+          }
         }
       });
       earth.scale.set(0.07, 0.07, 0.07);
       earth.name = 'Earth';
       scene.add(earth);
       earth.position.set(390, 0, 0);
-
     },
     undefined,
     function (error) {
@@ -135,8 +134,8 @@ function getEarth(){
     }
   );
   return earth;
-
 }
+
 function getMercury() {
   let mercury = null;
   const gltfloader = new GLTFLoader();
@@ -146,6 +145,10 @@ function getMercury() {
       mercury.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Mercury';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0xaaaaaa);
+            child.material.emissiveIntensity = 0.5;
+          }
         }
       });
       mercury.scale.set(0.05, 0.05, 0.05);
@@ -170,6 +173,10 @@ function getVenus() {
       venus.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Venus';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0xffcc66);
+            child.material.emissiveIntensity = 0.5;
+          }
         }
       });
       venus.scale.set(0.06, 0.06, 0.06);
@@ -194,6 +201,10 @@ function getMars() {
       mars.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Mars';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0xff3300);
+            child.material.emissiveIntensity = 0.5;
+          }
         }
       });
       mars.scale.set(0.055, 0.055, 0.055);
@@ -218,6 +229,10 @@ function getJupiter() {
       jupiter.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Jupiter';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0xff9966);
+            child.material.emissiveIntensity = 0.5;
+          }
         }
       });
       jupiter.scale.set(0.12, 0.12, 0.12);
@@ -242,6 +257,10 @@ function getSaturn() {
       saturn.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Saturn';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0xffff99);
+            child.material.emissiveIntensity = 0.5;
+          }
         }
       });
       saturn.scale.set(0.11, 0.11, 0.11);
@@ -266,6 +285,10 @@ function getUranus() {
       uranus.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Uranus';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0x66ffff);
+            child.material.emissiveIntensity = 0.5;
+          }
         }
       });
       uranus.scale.set(0.09, 0.09, 0.09);
@@ -290,6 +313,10 @@ function getNeptune() {
       neptune.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Neptune';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0x3333ff);
+            child.material.emissiveIntensity = 0.5;
+          }
         }
       });
       neptune.scale.set(0.085, 0.085, 0.085);
@@ -314,14 +341,16 @@ function getSun() {
       sun.traverse(function (child) {
         if (child.isMesh) {
           child.name = 'Sun';
+          if (child.material) {
+            child.material.emissive = new THREE.Color(0xffff00); 
+            child.material.emissiveIntensity = 3; 
+          }
         }
       });
       sun.scale.set(10, 10, 10);
       sun.name = 'Sun';
       scene.add(sun);
       sun.position.set(0, 0, 0);
-      
-
     },
     undefined,
     function (error) {
@@ -338,5 +367,54 @@ function setBackground(path) {
     scene.background = texture;
   });
 }
+// Function to set up bloom composers
+function setupBloomComposers(renderer, scene, camera, width, height) {
+  const finalComposer = new EffectComposer(renderer);
+  finalComposer.setSize(width, height);
 
+  const bloomComposer = new EffectComposer(renderer);
+  bloomComposer.setSize(width, height);
+
+  const renderPass = new RenderPass(scene, camera);
+  bloomComposer.addPass(renderPass);
+
+  const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(width, height),
+    1.5, 0.4, 0.1
+  );
+  bloomComposer.addPass(bloomPass);
+
+  const finalPass = new RenderPass(scene, camera);
+  finalComposer.addPass(finalPass);
+
+  const bloomBlendShader = {
+    uniforms: {
+      baseTexture: { value: null },
+      bloomTexture: { value: null }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform sampler2D baseTexture;
+      uniform sampler2D bloomTexture;
+      varying vec2 vUv;
+      void main() {
+        gl_FragColor = texture2D(baseTexture, vUv) + texture2D(bloomTexture, vUv);
+      }`
+  };
+
+  const bloomBlendPass = new ShaderPass(bloomBlendShader, 'baseTexture');
+  bloomBlendPass.needsSwap = true;
+  finalComposer.addPass(bloomBlendPass);
+
+  return {
+    finalComposer,
+    bloomComposer,
+    bloomBlendPass
+  };
+}
 
