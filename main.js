@@ -17,7 +17,7 @@ const { finalComposer, bloomComposer, bloomBlendPass } = setupBloomComposers(ren
 renderer.setSize(w, h);
 document.body.appendChild(renderer.domElement);
 
-AmbientLight(0xffffff, 3, scene);
+getAmbientLight(0xffffff, 3, scene);
 settingPlanets();
 
 setBackground('./planet-models/klop.exr');
@@ -66,12 +66,12 @@ function animate() {
 animate();
 
 // Functions to create lights in the scene
-function AmbientLight(color, intensity, scene) {
+function getAmbientLight(color, intensity, scene) {
   const light = new THREE.AmbientLight(color, intensity); 
   scene.add(light);
 }
 
-function DirectionalLight(color, intensity, scene) {
+function getDirectionalLight(color, intensity, scene) {
   const light = new THREE.DirectionalLight(color, intensity);
   scene.add(light);
   light.position.set(1, 1, 1).normalize();
@@ -108,256 +108,137 @@ function settingPlanets() {
     getSun();
 }
 
-function getEarth(){
-  let earth = null;
+// Reusable function to load a planet model
+function loadPlanet({
+  modelPath,
+  scale,
+  position,
+  name,
+  emissiveColor,
+  emissiveIntensity
+}) {
   const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Earth.glb',
+  gltfloader.load(modelPath,
     function (gltf) {
-      earth = gltf.scene;
-      earth.traverse(function (child) {
+      const planet = gltf.scene;
+      planet.traverse(function (child) {
         if (child.isMesh) {
-          child.name = 'Earth';
+          child.name = name;
           if (child.material) {
-            child.material.emissive = new THREE.Color(0x3399ff);
-            child.material.emissiveIntensity = 0.5; 
+            child.material.emissive = new THREE.Color(emissiveColor);
+            child.material.emissiveIntensity = emissiveIntensity;
           }
         }
       });
-      earth.scale.set(0.07, 0.07, 0.07);
-      earth.name = 'Earth';
-      scene.add(earth);
-      earth.position.set(390, 0, 0);
+      planet.scale.set(scale, scale, scale);
+      planet.name = name;
+      scene.add(planet);
+      planet.position.set(...position);
     },
     undefined,
     function (error) {
-      console.error('Error loading model:', error);
+      console.error(`Error loading ${name}:`, error);
     }
   );
-  return earth;
+}
+
+function getEarth() {
+  loadPlanet({
+    modelPath: '/planet-models/Earth.glb',
+    scale: 0.07,
+    position: [390, 0, 0],
+    name: 'Earth',
+    emissiveColor: 0x3399ff,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getMercury() {
-  let mercury = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Mercury.glb',
-    function (gltf) {
-      mercury = gltf.scene;
-      mercury.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Mercury';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0xaaaaaa);
-            child.material.emissiveIntensity = 0.5;
-          }
-        }
-      });
-      mercury.scale.set(0.05, 0.05, 0.05);
-      mercury.name = 'Mercury';
-      scene.add(mercury);
-      mercury.position.set(200, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Mercury:', error);
-    }
-  );
-  return mercury;
+  loadPlanet({
+    modelPath: '/planet-models/Mercury.glb',
+    scale: 0.05,
+    position: [200, 0, 0],
+    name: 'Mercury',
+    emissiveColor: 0xaaaaaa,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getVenus() {
-  let venus = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Venus.glb',
-    function (gltf) {
-      venus = gltf.scene;
-      venus.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Venus';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0xffcc66);
-            child.material.emissiveIntensity = 0.5;
-          }
-        }
-      });
-      venus.scale.set(0.06, 0.06, 0.06);
-      venus.name = 'Venus';
-      scene.add(venus);
-      venus.position.set(270, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Venus:', error);
-    }
-  );
-  return venus;
+  loadPlanet({
+    modelPath: '/planet-models/Venus.glb',
+    scale: 0.06,
+    position: [270, 0, 0],
+    name: 'Venus',
+    emissiveColor: 0xffcc66,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getMars() {
-  let mars = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Mars.glb',
-    function (gltf) {
-      mars = gltf.scene;
-      mars.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Mars';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0xff3300);
-            child.material.emissiveIntensity = 0.5;
-          }
-        }
-      });
-      mars.scale.set(0.055, 0.055, 0.055);
-      mars.name = 'Mars';
-      scene.add(mars);
-      mars.position.set(480, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Mars:', error);
-    }
-  );
-  return mars;
+  loadPlanet({
+    modelPath: '/planet-models/Mars.glb',
+    scale: 0.055,
+    position: [480, 0, 0],
+    name: 'Mars',
+    emissiveColor: 0xff3300,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getJupiter() {
-  let jupiter = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Jupiter.glb',
-    function (gltf) {
-      jupiter = gltf.scene;
-      jupiter.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Jupiter';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0xff9966);
-            child.material.emissiveIntensity = 0.5;
-          }
-        }
-      });
-      jupiter.scale.set(0.12, 0.12, 0.12);
-      jupiter.name = 'Jupiter';
-      scene.add(jupiter);
-      jupiter.position.set(600, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Jupiter:', error);
-    }
-  );
-  return jupiter;
+  loadPlanet({
+    modelPath: '/planet-models/Jupiter.glb',
+    scale: 0.12,
+    position: [600, 0, 0],
+    name: 'Jupiter',
+    emissiveColor: 0xff9966,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getSaturn() {
-  let saturn = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Saturn.glb',
-    function (gltf) {
-      saturn = gltf.scene;
-      saturn.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Saturn';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0xffff99);
-            child.material.emissiveIntensity = 0.5;
-          }
-        }
-      });
-      saturn.scale.set(0.11, 0.11, 0.11);
-      saturn.name = 'Saturn';
-      scene.add(saturn);
-      saturn.position.set(800, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Saturn:', error);
-    }
-  );
-  return saturn;
+  loadPlanet({
+    modelPath: '/planet-models/Saturn.glb',
+    scale: 0.11,
+    position: [800, 0, 0],
+    name: 'Saturn',
+    emissiveColor: 0xffff99,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getUranus() {
-  let uranus = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Uranus.glb',
-    function (gltf) {
-      uranus = gltf.scene;
-      uranus.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Uranus';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0x66ffff);
-            child.material.emissiveIntensity = 0.5;
-          }
-        }
-      });
-      uranus.scale.set(0.09, 0.09, 0.09);
-      uranus.name = 'Uranus';
-      scene.add(uranus);
-      uranus.position.set(1000, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Uranus:', error);
-    }
-  );
-  return uranus;
+  loadPlanet({
+    modelPath: '/planet-models/Uranus.glb',
+    scale: 0.09,
+    position: [1000, 0, 0],
+    name: 'Uranus',
+    emissiveColor: 0x66ffff,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getNeptune() {
-  let neptune = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Neptune.glb',
-    function (gltf) {
-      neptune = gltf.scene;
-      neptune.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Neptune';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0x3333ff);
-            child.material.emissiveIntensity = 0.5;
-          }
-        }
-      });
-      neptune.scale.set(0.085, 0.085, 0.085);
-      neptune.name = 'Neptune';
-      scene.add(neptune);
-      neptune.position.set(1150, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Neptune:', error);
-    }
-  );
-  return neptune;
+  loadPlanet({
+    modelPath: '/planet-models/Neptune.glb',
+    scale: 0.085,
+    position: [1150, 0, 0],
+    name: 'Neptune',
+    emissiveColor: 0x3333ff,
+    emissiveIntensity: 0.5
+  });
 }
 
 function getSun() {
-  let sun = null;
-  const gltfloader = new GLTFLoader();
-  gltfloader.load('/planet-models/Sun.glb',
-    function (gltf) {
-      sun = gltf.scene;
-      sun.traverse(function (child) {
-        if (child.isMesh) {
-          child.name = 'Sun';
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0xffff00); 
-            child.material.emissiveIntensity = 3; 
-          }
-        }
-      });
-      sun.scale.set(10, 10, 10);
-      sun.name = 'Sun';
-      scene.add(sun);
-      sun.position.set(0, 0, 0);
-    },
-    undefined,
-    function (error) {
-      console.error('Error loading Sun:', error);
-    }
-  );
-  return sun;
+  loadPlanet({
+    modelPath: '/planet-models/Sun.glb',
+    scale: 10,
+    position: [0, 0, 0],
+    name: 'Sun',
+    emissiveColor: 0xffff00,
+    emissiveIntensity: 3
+  });
 }
 
 // Function to set the background texture of the scene
